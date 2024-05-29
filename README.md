@@ -1,3 +1,39 @@
+## updates
+fixes text wrapping and line overlap issues from the original `react-native-lyric`
+
+implementation:
+```
+const lineRenderer = useCallback(({ lrcLine: { content }, active }) => {
+    return (
+      <View>
+        <Text
+          size="sm"
+          style={{ color: active ? colors.palette.neutral900 : colors.palette.neutral500 }}
+          text={content}
+        />
+      </View>
+    )
+  }, [])
+
+  return (
+    <View style={$container}>
+      {lyrics ? (
+        <LyricComponent
+          lrc={lyrics}
+          currentTime={currentTime}
+          lineHeight={spacing.xl}
+          activeLineHeight={spacing.xl}
+          lineRenderer={lineRenderer}
+          style={$lyricsContainer}
+        />
+      ) : (
+        <Text text="Loading lyrics..." size="md" />
+      )}
+    </View>
+  )
+```
+
+(original readme below)
 # react-native-lyric
 
 lyric,lrc,karaoke
