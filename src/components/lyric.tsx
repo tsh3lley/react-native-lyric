@@ -116,7 +116,7 @@ const Lrc = React.forwardRef<
 
   const handleLayout = (index: number) => (event: LayoutChangeEvent) => {
     const {height} = event.nativeEvent.layout;
-    console.log(`Line ${index} height: ${height}`);  // Logging height
+    // console.log(`Line ${index} height: ${height}`);  // Logging height
     setLineHeights((prev) => {
       const newHeights = [...prev];
       newHeights[index] = height;
