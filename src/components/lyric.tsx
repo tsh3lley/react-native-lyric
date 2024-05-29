@@ -1,6 +1,6 @@
 /* eslint-disable react-native/no-inline-styles */
-import React, {useRef, useImperativeHandle, useEffect, useMemo} from 'react';
-import {ScrollView, StyleProp, Text, View, ViewStyle} from 'react-native';
+import React, {useRef, useImperativeHandle, useEffect, useMemo, useState} from 'react';
+import {ScrollView, StyleProp, Text, View, ViewStyle, LayoutChangeEvent} from 'react-native';
 
 import {LrcLine, AUTO_SCROLL_AFTER_USER_SCROLL} from '../constant';
 import useLrc from '../util/use_lrc';
@@ -8,9 +8,7 @@ import useCurrentIndex from './use_current_index';
 import useLocalAutoScroll from './use_local_auto_scroll';
 
 interface Props {
-  /** lrc string */
   lrc: string;
-  /** lrc line render */
   lineRenderer: ({
     lrcLine,
     index,
@@ -20,13 +18,9 @@ interface Props {
     index: number;
     active: boolean;
   }) => React.ReactNode;
-  /** audio currentTime, millisecond */
   currentTime?: number;
-  /** whether auto scroll  */
   autoScroll?: boolean;
-  /** auto scroll after user scroll */
   autoScrollAfterUserScroll?: number;
-  /** when current line change */
   onCurrentLineChange?: ({
     index,
     lrcLine,
@@ -41,7 +35,6 @@ interface Props {
   [key: string]: any;
 }
 
-// eslint-disable-next-line no-spaced-func
 const Lrc = React.forwardRef<
   {
     scrollToCurrentLine: () => void;
@@ -57,6 +50,7 @@ const Lrc = React.forwardRef<
     lineRenderer = ({lrcLine: {content}, active}) => (
       <Text
         style={{
+          width: '100%', // Ensure the text takes the full width
           textAlign: 'center',
           color: active ? 'white' : 'gray',
           fontSize: active ? 16 : 13,
@@ -87,17 +81,17 @@ const Lrc = React.forwardRef<
     autoScrollAfterUserScroll,
   });
 
-  // auto scroll
+  const [lineHeights, setLineHeights] = useState<number[]>(new Array(lrcLineList.length).fill(0));
+
   useEffect(() => {
     if (localAutoScroll) {
       lrcRef.current?.scrollTo({
-        y: currentIndex * lineHeight || 0,
+        y: lineHeights.slice(0, currentIndex).reduce((sum, h) => sum + h, 0) || 0,
         animated: true,
       });
     }
-  }, [currentIndex, localAutoScroll, lineHeight]);
+  }, [currentIndex, localAutoScroll, lineHeights]);
 
-  // on current line change
   useEffect(() => {
     onCurrentLineChange &&
       onCurrentLineChange({
@@ -114,24 +108,35 @@ const Lrc = React.forwardRef<
     scrollToCurrentLine: () => {
       resetLocalAutoScroll();
       lrcRef.current?.scrollTo({
-        y: currentIndex * lineHeight || 0,
+        y: lineHeights.slice(0, currentIndex).reduce((sum, h) => sum + h, 0) || 0,
         animated: true,
       });
     },
   }));
+
+  const handleLayout = (index: number) => (event: LayoutChangeEvent) => {
+    const {height} = event.nativeEvent.layout;
+    console.log(`Line ${index} height: ${height}`);  // Logging height
+    setLineHeights((prev) => {
+      const newHeights = [...prev];
+      newHeights[index] = height;
+      return newHeights;
+    });
+  };
+
   const lyricNodeList = useMemo(
     () =>
       lrcLineList.map((lrcLine, index) => (
         <View
           key={lrcLine.id}
-          style={{
-            height: currentIndex === index ? activeLineHeight : lineHeight,
-          }}>
+          onLayout={handleLayout(index)}
+        >
           {lineRenderer({lrcLine, index, active: currentIndex === index})}
         </View>
       )),
-    [activeLineHeight, currentIndex, lineHeight, lineRenderer, lrcLineList],
+    [activeLineHeight, currentIndex, lineHeight, lineRenderer, lrcLineList, lineHeights],
   );
+
   return (
     <ScrollView
       {...props}
