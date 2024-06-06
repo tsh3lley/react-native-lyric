@@ -1,7 +1,8 @@
-import React, { useRef, useImperativeHandle, useEffect, useMemo, useState, useCallback } from 'react';
-import { ScrollView, StyleProp, Text, View, ViewStyle, LayoutChangeEvent } from 'react-native';
+/* eslint-disable react-native/no-inline-styles */
+import React, {useRef, useImperativeHandle, useEffect, useMemo, useState} from 'react';
+import {ScrollView, StyleProp, Text, View, ViewStyle, LayoutChangeEvent} from 'react-native';
 
-import { LrcLine, AUTO_SCROLL_AFTER_USER_SCROLL } from '../constant';
+import {LrcLine, AUTO_SCROLL_AFTER_USER_SCROLL} from '../constant';
 import useLrc from '../util/use_lrc';
 import useCurrentIndex from './use_current_index';
 import useLocalAutoScroll from './use_local_auto_scroll';
@@ -46,10 +47,9 @@ const Lrc = React.forwardRef<
 >(function Lrc(
   {
     lrc,
-    lineRenderer = ({ lrcLine: { content }, active }) => (
+    lineRenderer = ({lrcLine: {content}, active}) => (
       <Text
         style={{
-          width: '100%', // Ensure the text takes the full width
           textAlign: 'center',
           color: active ? 'white' : 'gray',
           fontSize: active ? 16 : 13,
@@ -74,22 +74,29 @@ const Lrc = React.forwardRef<
   const lrcRef = useRef<ScrollView>(null);
   const lrcLineList = useLrc(lrc);
 
-  const currentIndex = useCurrentIndex({ lrcLineList, currentTime });
-  const { localAutoScroll, resetLocalAutoScroll, onScroll } = useLocalAutoScroll({
+  const currentIndex = useCurrentIndex({lrcLineList, currentTime});
+  const {localAutoScroll, resetLocalAutoScroll, onScroll} = useLocalAutoScroll({
     autoScroll,
     autoScrollAfterUserScroll,
   });
 
   const [lineHeights, setLineHeights] = useState<number[]>(new Array(lrcLineList.length).fill(0));
+  const [heightsCalculated, setHeightsCalculated] = useState(false);
 
   useEffect(() => {
-    if (localAutoScroll) {
+    if (lineHeights.every((height) => height > 0)) {
+      setHeightsCalculated(true);
+    }
+  }, [lineHeights]);
+
+  useEffect(() => {
+    if (localAutoScroll && heightsCalculated && currentIndex > 0) {
       lrcRef.current?.scrollTo({
         y: lineHeights.slice(0, currentIndex).reduce((sum, h) => sum + h, 0) || 0,
         animated: true,
       });
     }
-  }, [currentIndex, localAutoScroll]);
+  }, [currentIndex, localAutoScroll, lineHeights, heightsCalculated]);
 
   useEffect(() => {
     onCurrentLineChange &&
@@ -97,7 +104,7 @@ const Lrc = React.forwardRef<
         index: currentIndex,
         lrcLine: lrcLineList[currentIndex] || null,
       });
-  }, [currentIndex, onCurrentLineChange]);
+  }, [lrcLineList, currentIndex, onCurrentLineChange]);
 
   useImperativeHandle(ref, () => ({
     getCurrentLine: () => ({
@@ -113,26 +120,26 @@ const Lrc = React.forwardRef<
     },
   }));
 
-  const handleLayout = useCallback((index: number) => (event: LayoutChangeEvent) => {
-    const { height } = event.nativeEvent.layout;
+  const handleLayout = (index: number) => (event: LayoutChangeEvent) => {
+    const {height} = event.nativeEvent.layout;
     setLineHeights((prev) => {
-      if (prev[index] !== height) {
-        const newHeights = [...prev];
-        newHeights[index] = height;
-        return newHeights;
-      }
-      return prev;
+      const newHeights = [...prev];
+      newHeights[index] = height;
+      return newHeights;
     });
-  }, []);
+  };
 
   const lyricNodeList = useMemo(
     () =>
       lrcLineList.map((lrcLine, index) => (
-        <View key={lrcLine.id} onLayout={handleLayout(index)}>
-          {lineRenderer({ lrcLine, index, active: currentIndex === index })}
+        <View
+          key={lrcLine.id}
+          onLayout={handleLayout(index)}
+        >
+          {lineRenderer({lrcLine, index, active: currentIndex === index})}
         </View>
       )),
-    [currentIndex, handleLayout, lrcLineList, lineRenderer]
+    [activeLineHeight, currentIndex, lineHeight, lineRenderer, lrcLineList, lineHeights],
   );
 
   return (
@@ -141,14 +148,14 @@ const Lrc = React.forwardRef<
       ref={lrcRef}
       scrollEventThrottle={30}
       onScroll={onScroll}
-      style={[style, { height }]}>
+      style={[style, {height}]}>
       <View>
         {autoScroll ? (
-          <View style={{ width: '100%', height: 0.45 * height }} />
+          <View style={{width: '100%', height: 0.45 * height}} />
         ) : null}
         {lyricNodeList}
         {autoScroll ? (
-          <View style={{ width: '100%', height: 0.5 * height }} />
+          <View style={{width: '100%', height: 0.5 * height}} />
         ) : null}
       </View>
     </ScrollView>
