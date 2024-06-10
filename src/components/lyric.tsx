@@ -96,7 +96,7 @@ const Lrc = React.forwardRef<
         animated: true,
       });
     }
-  }, [currentIndex, localAutoScroll, lineHeights, heightsCalculated]);
+  }, [currentIndex, localAutoScroll, /*lineHeights, */heightsCalculated]);
 
   useEffect(() => {
     onCurrentLineChange &&
@@ -139,7 +139,7 @@ const Lrc = React.forwardRef<
           {lineRenderer({lrcLine, index, active: currentIndex === index})}
         </View>
       )),
-    [activeLineHeight, currentIndex, lineHeight, lineRenderer, lrcLineList, lineHeights],
+    [activeLineHeight, currentIndex, lineHeight, lineRenderer, lrcLineList/*, lineHeights*/],
   );
 
   return (
