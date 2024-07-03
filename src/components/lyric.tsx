@@ -150,9 +150,6 @@ const Lrc = React.forwardRef<
       onScroll={onScroll}
       style={[style, {height}]}>
       <View>
-        {autoScroll ? (
-          <View style={{width: '100%', height: 0.45 * height}} />
-        ) : null}
         {lyricNodeList}
         {autoScroll ? (
           <View style={{width: '100%', height: 0.5 * height}} />
