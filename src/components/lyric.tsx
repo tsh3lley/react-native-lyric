@@ -32,6 +32,8 @@ interface Props {
   height: number;
   lineHeight: number;
   activeLineHeight: number;
+  centerLine: boolean;
+  centerLineOffset?: number;
   [key: string]: any;
 }
 
@@ -67,6 +69,8 @@ const Lrc = React.forwardRef<
     onCurrentLineChange,
     height = 500,
     style,
+    centerLine = true,
+    centerLineOffset = 0.3,
     ...props
   }: Props,
   ref,
@@ -90,13 +94,18 @@ const Lrc = React.forwardRef<
   }, [lineHeights]);
 
   useEffect(() => {
-    if (localAutoScroll && heightsCalculated && currentIndex > 0) {
+    if (autoScroll && localAutoScroll && heightsCalculated && currentIndex > 0) {
+      const totalHeight = lineHeights.slice(0, currentIndex).reduce((sum, h) => sum + h, 0);
+      const scrollPosition = centerLine
+        ? totalHeight - height * centerLineOffset + lineHeights[currentIndex] / 2
+        : totalHeight;
+      
       lrcRef.current?.scrollTo({
-        y: lineHeights.slice(0, currentIndex).reduce((sum, h) => sum + h, 0) || 0,
+        y: Math.max(0, scrollPosition),
         animated: true,
       });
     }
-  }, [currentIndex, localAutoScroll, /*lineHeights, */heightsCalculated]);
+  }, [currentIndex, localAutoScroll, heightsCalculated, lineHeights, height, centerLine, centerLineOffset, autoScroll]);
 
   useEffect(() => {
     onCurrentLineChange &&
@@ -150,10 +159,11 @@ const Lrc = React.forwardRef<
       onScroll={onScroll}
       style={[style, {height}]}>
       <View>
+        {centerLine && <View style={{height: height * centerLineOffset}} />}
         {lyricNodeList}
-        {autoScroll ? (
-          <View style={{width: '100%', height: 0.5 * height}} />
-        ) : null}
+        {(autoScroll || centerLine) && (
+          <View style={{width: '100%', height: centerLine ? height * (1 - centerLineOffset) : 0.5 * height}} />
+        )}
       </View>
     </ScrollView>
   );
